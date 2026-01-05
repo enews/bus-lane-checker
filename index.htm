@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e40af">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>SG Bus Lane Status</title>
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiU0cgQnVzIExhbmUgU3RhdHVzIiwic2hvcnRfbmFtZSI6IkJ1cyBMYW5lIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiMxZTQwYWYiLCJ0aGVtZV9jb2xvciI6IiMxZTQwYWYiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJyUzRSUzQ3JlY3Qgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnIGZpbGw9JyUyMzFlNDBhZicvJTNFJTNDdGV4dCB4PSc1MCUyNScgeT0nNTAlMjUnIGZvbnQtc2l6ZT0nNTAnIGZpbGw9J3doaXRlJyUzRUIlM0MvdGV4dCUzRSUzQy9zdmclM0UiLCJzaXplcyI6IjE5MngxOTIiLCJ0eXBlIjoiaW1hZ2Uvc3ZnK3htbCJ9XX0=">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #262624;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .time-display {
+            font-size: 1.5em;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+        
+        .status-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        .lane-type {
+            color: #faf9f5;
+            font-size: 1.8em;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .status-indicator {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .status-indicator.active {
+            background: #22c55e;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.6);
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.inactive {
+            background: #b8b5ad;
+        }
+        
+        .status-indicator.soon {
+            background: #f59e0b;
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.6);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .status-text {
+            font-size: 2.5em;
+            font-weight: 800;
+            text-align: center;
+        }
+        
+        .status-text.active {
+            color: #22c55e;
+        }
+        
+        .status-text.inactive {
+            color: #b8b5ad;
+        }
+        
+        .status-text.soon {
+            color: #f59e0b;
+        }
+        
+        .time-info {
+            color: #faf9f5;
+            font-size: 1.3em;
+            text-align: center;
+            font-weight: 600;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 640px) {
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .time-display {
+                font-size: 1.2em;
+            }
+            
+            .lane-type {
+                font-size: 1.5em;
+            }
+            
+            .status-text {
+                font-size: 2em;
+            }
+            
+            .time-info {
+                font-size: 1.1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚌 Bus Lane Status</h1>
+            <div class="time-display" id="currentTime"></div>
+        </div>
+        
+        <div class="status-card">
+            <div class="lane-type">Part-Day Bus Lanes</div>
+            <div class="status">
+                <div class="status-indicator" id="partDayIndicator"></div>
+                <div class="status-text" id="partDayStatus"></div>
+            </div>
+            <div class="time-info">
+                Mon-Fri: 7:30-9:30 AM, 5-8 PM<br>
+                Sat: 7:30 AM - 2 PM
+            </div>
+        </div>
+        
+        <div class="status-card">
+            <div class="lane-type">Full-Day Bus Lanes</div>
+            <div class="status">
+                <div class="status-indicator" id="fullDayIndicator"></div>
+                <div class="status-text" id="fullDayStatus"></div>
+            </div>
+            <div class="time-info">Active: Mon-Sat, 7:30 AM - 11 PM</div>
+        </div>
+    </div>
+
+    <script>
+        function updateStatus() {
+            const now = new Date();
+            const day = now.getDay();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const timeInMinutes = hours * 60 + minutes;
+            
+            // Format current time
+            const timeStr = now.toLocaleTimeString('en-SG', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: true 
+            });
+            const dateStr = now.toLocaleDateString('en-SG', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            document.getElementById('currentTime').textContent = `${dateStr} • ${timeStr}`;
+            
+            // Sunday = 0, Saturday = 6
+            const isWeekday = day >= 1 && day <= 5;
+            const isSaturday = day === 6;
+            const isSunday = day === 0;
+            
+            // Full-day bus lanes: Mon-Sat, 7:30 AM - 11 PM (not Sunday)
+            let fullDayActive = false;
+            let fullDaySoon = false;
+            
+            if (!isSunday) {
+                if (timeInMinutes >= 450 && timeInMinutes < 1380) { // 7:30 AM to 11 PM
+                    fullDayActive = true;
+                } else if (timeInMinutes >= 435 && timeInMinutes < 450) { // 15 min before (7:15-7:30 AM)
+                    fullDaySoon = true;
+                } else if (timeInMinutes >= 1365 && timeInMinutes < 1380) { // 15 min before end (10:45-11 PM)
+                    fullDaySoon = true;
+                }
+            }
+            
+            // Part-day bus lanes
+            let partDayActive = false;
+            let partDaySoon = false;
+            
+            if (isWeekday) {
+                // Mon-Fri: 7:30-9:30 AM or 5-8 PM
+                if ((timeInMinutes >= 450 && timeInMinutes < 570) || 
+                    (timeInMinutes >= 1020 && timeInMinutes < 1200)) {
+                    partDayActive = true;
+                } else if ((timeInMinutes >= 435 && timeInMinutes < 450) || // 15 min before 7:30 AM
+                           (timeInMinutes >= 1005 && timeInMinutes < 1020) || // 15 min before 5 PM
+                           (timeInMinutes >= 555 && timeInMinutes < 570) || // 15 min before 9:30 AM end
+                           (timeInMinutes >= 1185 && timeInMinutes < 1200)) { // 15 min before 8 PM end
+                    partDaySoon = true;
+                }
+            } else if (isSaturday) {
+                // Sat: 7:30 AM - 2 PM
+                if (timeInMinutes >= 450 && timeInMinutes < 840) {
+                    partDayActive = true;
+                } else if ((timeInMinutes >= 435 && timeInMinutes < 450) || // 15 min before 7:30 AM
+                           (timeInMinutes >= 825 && timeInMinutes < 840)) { // 15 min before 2 PM end
+                    partDaySoon = true;
+                }
+            }
+            
+            // Update full-day status
+            const fullDayIndicator = document.getElementById('fullDayIndicator');
+            const fullDayStatus = document.getElementById('fullDayStatus');
+            if (fullDayActive) {
+                fullDayIndicator.className = 'status-indicator active';
+                fullDayStatus.className = 'status-text active';
+                fullDayStatus.textContent = 'IN OPERATION';
+            } else if (fullDaySoon) {
+                fullDayIndicator.className = 'status-indicator soon';
+                fullDayStatus.className = 'status-text soon';
+                fullDayStatus.textContent = 'SOON';
+            } else {
+                fullDayIndicator.className = 'status-indicator inactive';
+                fullDayStatus.className = 'status-text inactive';
+                fullDayStatus.textContent = 'NOT IN OPERATION';
+            }
+            
+            // Update part-day status
+            const partDayIndicator = document.getElementById('partDayIndicator');
+            const partDayStatus = document.getElementById('partDayStatus');
+            if (partDayActive) {
+                partDayIndicator.className = 'status-indicator active';
+                partDayStatus.className = 'status-text active';
+                partDayStatus.textContent = 'IN OPERATION';
+            } else if (partDaySoon) {
+                partDayIndicator.className = 'status-indicator soon';
+                partDayStatus.className = 'status-text soon';
+                partDayStatus.textContent = 'SOON';
+            } else {
+                partDayIndicator.className = 'status-indicator inactive';
+                partDayStatus.className = 'status-text inactive';
+                partDayStatus.textContent = 'NOT IN OPERATION';
+            }
+        }
+        
+        // Update immediately and then every second
+        updateStatus();
+        setInterval(updateStatus, 1000);
+        
+        // Refresh the page every minute
+        setInterval(() => {
+            location.reload();
+        }, 60000);
+    </script>
+</body>
+</html>
